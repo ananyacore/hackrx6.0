@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insurance Policy Query System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .query-form {
+            margin-bottom: 30px;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            resize: vertical;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 5px;
+            display: none;
+        }
+        .approved {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .rejected {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+        }
+        .example-queries {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        .example-queries h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .example-query {
+            background-color: #e9ecef;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .example-query:hover {
+            background-color: #dee2e6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Insurance Policy Query System</h1>
+        
+        <div class="query-form">
+            <textarea id="queryInput" placeholder="Enter your insurance query here... (e.g., 'I am a 35-year-old male needing surgery coverage')"></textarea>
+            <button onclick="submitQuery()">Submit Query</button>
+        </div>
+        
+        <div id="result" class="result">
+            <h3>Decision: <span id="decision"></span></h3>
+            <p><strong>Amount:</strong> <span id="amount"></span></p>
+            <p><strong>Justification:</strong> <span id="justification"></span></p>
+            <p><strong>Clause Reference:</strong> <span id="clauseRef"></span></p>
+        </div>
+        
+        <div class="example-queries">
+            <h3>Example Queries:</h3>
+            <div class="example-query" onclick="setQuery('I am a 35-year-old male needing heart surgery')">
+                I am a 35-year-old male needing heart surgery
+            </div>
+            <div class="example-query" onclick="setQuery('Female patient requiring knee replacement surgery')">
+                Female patient requiring knee replacement surgery
+            </div>
+            <div class="example-query" onclick="setQuery('30-year-old male needs hospitalization for 2 months')">
+                30-year-old male needs hospitalization for 2 months
+            </div>
+            <div class="example-query" onclick="setQuery('Emergency surgery required for appendicitis')">
+                Emergency surgery required for appendicitis
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function setQuery(query) {
+            document.getElementById('queryInput').value = query;
+        }
+
+        async function submitQuery() {
+            const query = document.getElementById('queryInput').value.trim();
+            if (!query) {
+                alert('Please enter a query');
+                return;
+            }
+
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result loading';
+            resultDiv.innerHTML = '<p>Processing your query...</p>';
+
+            try {
+                const response = await fetch('/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query: query })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+                
+                // Update result display
+                document.getElementById('decision').textContent = data.decision.toUpperCase();
+                document.getElementById('amount').textContent = data.amount;
+                document.getElementById('justification').textContent = data.justification;
+                document.getElementById('clauseRef').textContent = data.clause_reference;
+                
+                // Set appropriate styling based on decision
+                resultDiv.className = `result ${data.decision}`;
+                resultDiv.innerHTML = `
+                    <h3>Decision: <span id="decision">${data.decision.toUpperCase()}</span></h3>
+                    <p><strong>Amount:</strong> <span id="amount">${data.amount}</span></p>
+                    <p><strong>Justification:</strong> <span id="justification">${data.justification}</span></p>
+                    <p><strong>Clause Reference:</strong> <span id="clauseRef">${data.clause_reference}</span></p>
+                `;
+
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.className = 'result rejected';
+                resultDiv.innerHTML = '<p>Error processing query. Please try again.</p>';
+            }
+        }
+
+        // Allow Enter key to submit
+        document.getElementById('queryInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                submitQuery();
+            }
+        });
+    </script>
+</body>
+</html>
